@@ -137,8 +137,8 @@ function filter_translations_render_navbar_output(\renderer_base $renderer) {
         'allmissingtranslationsurl' => $allmissingtranslationsurl->out(false),
         'allstaletranslationsurl' => $allstaletranslationsurl->out(false),
         'inlinetranslationstate' => $currentinlinetranslationstate,
-        'missingcount' => filter_translations_cap_count(translation_issue::count_records(['issue' => translation_issue::ISSUE_MISSING, 'targetlanguage' => $targetlanguage])),
-        'stalecount' => filter_translations_cap_count(translation_issue::count_records(['issue' => translation_issue::ISSUE_STALE, 'targetlanguage' => $targetlanguage])),
+        'missingcount' => ($currentinlinetranslationstate) ? filter_translations_cap_count(count(translation_issue::get_records(['issue' => translation_issue::ISSUE_MISSING, 'targetlanguage' => $targetlanguage], '', 'ASC', 0, 100))) : '-',
+        'stalecount' => ($currentinlinetranslationstate) ? filter_translations_cap_count(count(translation_issue::get_records(['issue' => translation_issue::ISSUE_STALE, 'targetlanguage' => $targetlanguage], '', 'ASC', 0, 100))) : '-',
         'alltranslationsurl' => $alltranslationsurl->out(false),
         'translateall' => (has_capability('filter/translations:editsitedefaulttranslations', $context)) ? true : false,
     ]);
