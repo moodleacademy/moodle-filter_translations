@@ -26,7 +26,6 @@
 namespace filter_translations;
 
 use cache;
-use context_system;
 use filter_translations\translationproviders\googletranslate;
 use filter_translations\translationproviders\languagestringreverse;
 
@@ -54,6 +53,8 @@ class translator {
      * @throws \dml_exception
      */
     public function get_best_translation($language, $generatedhash, $foundhash, $text) {
+        global $CFG;
+
         $translations = $this->get_string_manager()->get_list_of_translations(true);
 
         // Don't translate names of languages.
@@ -97,11 +98,10 @@ class translator {
         }
 
         // Check to see if there is an issue that needs logging (e.g. missing or stale translation).
-        // Only do this if user has permission to translate.
-        if (has_capability('filter/translations:edittranslations', context_system::instance())) {
+        // Skip the site default language.
+        if ($language != $CFG->lang) {
             $this->checkforandlogissue($foundhash, $generatedhash, $language, $text, $translation);
         }
-
         return $translation;
     }
 
