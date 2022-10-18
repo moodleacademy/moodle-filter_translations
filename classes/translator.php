@@ -33,6 +33,13 @@ use filter_translations\translationproviders\languagestringreverse;
  *
  */
 class translator {
+    public static $googletranslatefetches = 0;
+    public static $langstringlookupfetches = 0;
+    public static $existingmanualtranslationsfound = 0;
+    public static $existingautotranslationsfound = 0;
+    public static $translationnotfound = 0;
+    public static $cachehit = 0;
+
     /**
      * Wrapper function to allow overriding in translator_testable.
      * @return \core_string_manager
@@ -85,6 +92,7 @@ class translator {
 
             if (!empty($languagestringtranslation)) {
                 // Got one, use it.
+                self::$langstringlookupfetches++;
                 $translation = $languagestringtranslation;
             } else {
                 // No dice... try google translate.
@@ -92,9 +100,18 @@ class translator {
                 $googletranslation = $google->createorupdate_translation($foundhash, $generatedhash, $text, $language, $translation);
 
                 if (!empty($googletranslation)) {
+                    self::$googletranslatefetches++;
                     $translation = $googletranslation;
                 }
             }
+        } else if (!empty($translation)) {
+            if ($translation->get('translationsource') == translation::SOURCE_MANUAL) {
+                self::$existingmanualtranslationsfound++;
+            } else if ($translation->get('translationsource') == translation::SOURCE_AUTOMATIC) {
+                self::$existingautotranslationsfound++;
+            }
+        } else {
+            self::$translationnotfound++;
         }
 
         // Check to see if there is an issue that needs logging (e.g. missing or stale translation).
@@ -261,7 +278,7 @@ class translator {
     private function get_usable_translations($prioritisedlanguages, $generatedhash, $foundhash) {
         global $DB;
 
-        $hashor = ['md5key = :generatedhash', 'lastgeneratedhash = :generatedhash2'];
+        $hashor = ['md5key = :generatedhash'];
         $params = ['generatedhash' => $generatedhash, 'generatedhash2' => $generatedhash];
 
         if (isset($foundhash)) {
@@ -270,11 +287,15 @@ class translator {
         }
         $hashor = implode(' OR ', $hashor);
 
-        list($langsql, $langparam) = $DB->get_in_or_equal($prioritisedlanguages, SQL_PARAMS_NAMED);
+        list($langsql, $langparam) = $DB->get_in_or_equal($prioritisedlanguages, SQL_PARAMS_NAMED, 'lang1');
+        list($langsql2, $langparam2) = $DB->get_in_or_equal($prioritisedlanguages, SQL_PARAMS_NAMED, 'lang2');
 
-        $select = "($hashor) AND targetlanguage $langsql";
-
-        return translation::get_records_select($select, $params + $langparam);
+        return translation::get_records_sql("
+                select * from {filter_translations} where ($hashor) AND targetlanguage $langsql
+                                                      union
+                select * from {filter_translations} where (lastgeneratedhash = :generatedhash2) AND targetlanguage $langsql2
+                ", $params + $langparam + $langparam2
+        );
     }
 
     /**
@@ -311,7 +332,7 @@ class translator {
         static $skiplanguage = null;
 
         if (!isset($skiplanguage)) {
-            $languagestoskip = get_config('filter_translations', 'excludelang');
+            $languagestoskip = get_config('filter_translations', 'logexcludelang');
             if (!empty($languagestoskip)) {
                 $languagestoskip = explode(",", $languagestoskip);
                 $skiplanguage = in_array($language, $languagestoskip);

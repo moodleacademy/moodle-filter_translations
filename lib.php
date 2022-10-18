@@ -71,6 +71,13 @@ function filter_translations_render_navbar_output(\renderer_base $renderer) {
 
     require_once("$CFG->dirroot/filter/translations/filter.php");
 
+    // Inform user that language cannot be translated.
+    if (filter_translations::skiptranslations()) {
+        return $renderer->render_from_template('filter_translations/toggleinlinestranslationstate', (object)[
+            'skiptranslations' => true,
+        ]);
+    }
+
     $currentinlinetranslationstate = filter_translations::checkinlinestranslation();
     $inlinetransationtate = optional_param('inlinetransationtate', null, PARAM_BOOL);
 
@@ -140,6 +147,7 @@ function filter_translations_render_navbar_output(\renderer_base $renderer) {
         'inlinetranslationstate' => $currentinlinetranslationstate,
         'alltranslationsurl' => $alltranslationsurl->out(false),
         'translateall' => (has_capability('filter/translations:editsitedefaulttranslations', $context)) ? true : false,
+        'skiptranslations' => false,
     ]);
 }
 
@@ -174,9 +182,20 @@ function filter_translations_after_config() {
  * translation_button.register - do this for all trans
  */
 function filter_translations_before_footer() {
-    global $PAGE, $CFG;
+    global $PAGE, $CFG, $OUTPUT;
 
     require_once("$CFG->dirroot/filter/translations/filter.php");
+
+    if (get_config('filter_translations', 'showperfdata')) {
+        echo $OUTPUT->render_from_template('filter_translations/translationperfdata', (object)[
+            'googletranslatefetches' => \filter_translations\translator::$googletranslatefetches,
+            'langstringlookupfetches' => \filter_translations\translator::$langstringlookupfetches,
+            'existingmanualtranslationsfound' => \filter_translations\translator::$existingmanualtranslationsfound,
+            'existingautotranslationsfound' => \filter_translations\translator::$existingautotranslationsfound,
+            'translationnotfound' => \filter_translations\translator::$translationnotfound,
+            'cachehit' => \filter_translations\translator::$cachehit,
+        ]);
+    }
 
     if (empty(\filter_translations::$translationstoinject)) {
         return;
@@ -192,4 +211,5 @@ function filter_translations_before_footer() {
 
     // findandinjectbuttons - add the actual buttons.
     $PAGE->requires->js_amd_inline("require(['filter_translations/translation_button'], function(translation_button) { translation_button.findandinjectbuttons();});");
+
 }

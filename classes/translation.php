@@ -102,7 +102,14 @@ class translation extends persistent {
      * @throws \coding_exception
      */
     protected function dropfromcache() {
-        \filter_translations::cache()->purge();
+        $cache = \filter_translations::cache();
+
+        foreach ([
+            $this->get('targetlanguage') . $this->get('md5key'),
+            $this->get('targetlanguage') . $this->get('lastgeneratedhash'),
+                 ] as $cachekey) {
+            $cache->delete($cachekey);
+        }
     }
 
     /**
@@ -172,5 +179,19 @@ class translation extends persistent {
         translation_updated::trigger_from_translation($this, $this->previous);
         translation_issue::remove_records_for_translation($this);
         $this->dropfromcache();
+    }
+
+    public static function get_records_sql($sql, array $params=null, $limitfrom=0, $limitnum=0) {
+        global $DB;
+
+        $records = $DB->get_records_sql($sql, $params, $limitfrom, $limitnum);
+
+        // We return class instances.
+        $instances = array();
+        foreach ($records as $key => $record) {
+            $instances[$key] = new static(0, $record);
+        }
+
+        return $instances;
     }
 }

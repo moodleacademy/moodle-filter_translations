@@ -51,6 +51,8 @@ class googletranslate extends translationprovider {
             if (!empty($config->google_backoffonerror) && $config->google_backoffonerror_time < time() - HOURSECS) {
                 $config->google_backoffonerror = false;
                 set_config('google_backoffonerror', false, 'filter_translations');
+                $cache = \filter_translations::cache();
+                $cache->purge();
             }
 
             if (empty($config->google_enable)
@@ -107,7 +109,7 @@ class googletranslate extends translationprovider {
 
         $info = $curl->get_info();
         if ($info['http_code'] != 200) {
-            error_log("Error calling Google Translate: \n" . $info['http_code']);
+            error_log("Error calling Google Translate: \n" . $info['http_code'] . "\n" . print_r($curl->get_raw_response(), true));
             $this->backoff();
             return null;
         }

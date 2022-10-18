@@ -26,6 +26,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
+    $list_of_translations = get_string_manager()->get_list_of_translations(true);
+
     $settings->add(new admin_setting_heading('managetranslations', '',
         html_writer::link(new moodle_url('/filter/translations/managetranslations.php'),
             get_string('managetranslations', 'filter_translations'), ['class' => "btn btn-primary"])));
@@ -36,6 +38,9 @@ if ($ADMIN->fulltree) {
 
 
     $settings->add(new admin_setting_heading('performance', get_string('performance', 'admin'), ''));
+
+    $settings->add(new admin_setting_configcheckbox('filter_translations/showperfdata',
+        get_string('showperfdata', 'filter_translations'), '', false));
 
     $options = [];
     foreach ([cache_store::MODE_REQUEST, cache_store::MODE_SESSION, cache_store::MODE_APPLICATION] as $mode) {
@@ -50,12 +55,17 @@ if ($ADMIN->fulltree) {
         '/blocks/configurable_reports/viewreport.php')
     );
 
-    $settings->add(new admin_setting_configtext('filter_translations/excludelang',
+    $settings->add(new admin_setting_configmultiselect('filter_translations/excludelang',
         get_string('excludelang', 'filter_translations')
-        , get_string('excludelang_desc', 'filter_translations'), '',
-        PARAM_TEXT));
+        , get_string('excludelang_desc', 'filter_translations'), [],
+        $list_of_translations));
 
     $settings->add(new admin_setting_heading('logging', get_string('logging', 'filter_translations'), ''));
+
+    $settings->add(new admin_setting_configmultiselect('filter_translations/logexcludelang',
+        get_string('logexcludelang', 'filter_translations')
+        , get_string('logexcludelang_desc', 'filter_translations'), [],
+        $list_of_translations));
 
     $settings->add(new admin_setting_configcheckbox('filter_translations/logmissing',
         get_string('logmissing', 'filter_translations'), '', false));
