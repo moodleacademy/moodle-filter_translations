@@ -91,16 +91,31 @@ class googletranslate extends translationprovider {
         $targetlanguage = str_replace('_wp', '', $targetlanguage);
         $curl = new curl();
 
-        $params = [
-                'target' => $targetlanguage,
-                'key'    => $config->google_apikey,
-                'q'      => $text
-        ];
+        $curl->setHeader(array('Content-Type: application/json'));
 
-        $url = new moodle_url($config->google_apiendpoint, $params);
+        // Look for any base64 encoded files, create an md5 of their content,
+        // use the md5 as a placeholder while we send the text to google translate.
+        $base64s = [];
+        if (strpos($text, 'base64') !== false) {
+            $text = preg_replace_callback(
+                '/(data:[^;]+\/[^;]+;base64)([^"]+)/i',
+                function ($m) use (&$base64s) {
+                    $md5 = md5($m[2]);
+                    $base64s[$md5] = $m[2];
+
+                    return $m[1] . $md5;
+                },
+                $text
+            );
+        }
+
+        $url = new moodle_url($config->google_apiendpoint, ['key' => $config->google_apikey]);
 
         try {
-            $resp = $curl->post($url->out(false));
+            $resp = $curl->post($url->out(false), json_encode([
+                'target' => $targetlanguage,
+                'q'      => $text
+            ]));
         } catch (\Exception $ex) {
             error_log("Error calling Google Translate: \n" . $ex->getMessage());
             $this->backoff();
@@ -109,7 +124,7 @@ class googletranslate extends translationprovider {
 
         $info = $curl->get_info();
         if ($info['http_code'] != 200) {
-            error_log("Error calling Google Translate: \n" . $info['http_code'] . "\n" . print_r($curl->get_raw_response(), true));
+            error_log("Error calling Google Translate: \n" . $info['http_code'] . "\nFailed Text:\n" . substr($text, 0, 1000) . "\n" . print_r($curl->get_raw_response(), true));
             $this->backoff();
             return null;
         }
@@ -120,7 +135,14 @@ class googletranslate extends translationprovider {
             return null;
         }
 
-        return $resp->data->translations[0]->translatedText;
+        $text = $resp->data->translations[0]->translatedText;
+
+        // Swap the base 64 encoded images back in.
+        foreach ($base64s as $md5 => $base64) {
+            $text = str_replace($md5, $base64, $text);
+        }
+
+        return $text;
     }
 
     /**
