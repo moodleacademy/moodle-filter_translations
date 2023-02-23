@@ -50,6 +50,8 @@ if (empty($contextid)) {
     $context = context::instance_by_id($contextid);
 }
 
+require_login();
+
 require_capability('filter/translations:edittranslations', $context);
 
 $url = new moodle_url('/filter/translations/edittranslation.php');
@@ -81,7 +83,8 @@ if (empty($id)) {
 }
 $persistent->set('contextid', $contextid);
 
-$istranslationstale = !empty($generatedhash) && !empty($persistent->get('id')) && $persistent->get('lastgeneratedhash') !== $generatedhash;
+$istranslationstale = !empty($generatedhash) && !empty($persistent->get('id')) &&
+    $persistent->get('lastgeneratedhash') !== $generatedhash;
 if (!empty($generatedhash)) {
     $persistent->set('lastgeneratedhash', $generatedhash);
 }
@@ -111,7 +114,8 @@ if (
     $formtype = edittranslationform::FORMTYPE_PLAIN;
 }
 
-$form = new edittranslationform($url->out(false), ['persistent' => $persistent, 'formtype' => $formtype, 'showdiff' => $showdiff, 'old' => $old]);
+$form = new edittranslationform($url->out(false),
+    ['persistent' => $persistent, 'formtype' => $formtype, 'showdiff' => $showdiff, 'old' => $old]);
 
 if ($data = $form->get_data()) {
     if (!empty($data->deletebutton) && has_capability('filter/translations:deletetranslations', $context)) {
