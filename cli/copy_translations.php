@@ -87,6 +87,8 @@ if ($options['mode'] == 'listcolumns') {
         die();
     }
 
+    $languages = get_string_manager()->get_list_of_translations(); // Languages in used in the site.
+
     $transaction = $DB->start_delegated_transaction();
     foreach ($columnsbytabletoprocess as $table => $columns) {
         $filter = new filter_translations(context_system::instance(), []);
@@ -171,12 +173,14 @@ if ($options['mode'] == 'listcolumns') {
                 }
 
                 // Copy over any translations not recorded under the found hash of this content.
-                if (!empty($generatedhashtranslations)) {
-                    cli_writeln("foundhash: $foundhash, content hash: $generatedhash");
-                }
-
+                $shouldprint = true;
                 foreach ($generatedhashtranslations as $tr) {
-                    if (!isset($foundhashtranslations[$tr->targetlanguage])) {
+                    if (!isset($foundhashtranslations[$tr->targetlanguage]) && isset($languages[$tr->targetlanguage])) {
+                        if ($shouldprint) {
+                            cli_writeln("foundhash: $foundhash, content hash: $generatedhash");
+                            $shouldprint = false;
+                        }
+
                         cli_writeln("  + copying translation from md5key: $tr->md5key, lang: $tr->targetlanguage");
 
                         if ($options['mode'] == 'process') {

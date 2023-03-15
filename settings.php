@@ -68,6 +68,9 @@ if ($ADMIN->fulltree) {
         get_string('logexcludelang_desc', 'filter_translations'), [],
         $listoftranslations));
 
+    $settings->add(new admin_setting_configcheckbox('filter_translations/loghistory',
+        get_string('loghistory', 'filter_translations'), '', false));
+
     $settings->add(new admin_setting_configcheckbox('filter_translations/logmissing',
         get_string('logmissing', 'filter_translations'), '', false));
 
@@ -76,6 +79,14 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_configduration('filter_translations/logdebounce',
         get_string('logdebounce', 'filter_translations'), '', DAYSECS));
+
+    $settings->add(new admin_setting_heading('scheduledtasks', get_string('scheduledtasks', 'filter_translations'), ''));
+
+    $settings->add(new admin_setting_configtextarea('filter_translations/columndefinition',
+        new lang_string('columndefinition', 'filter_translations'),
+        new lang_string('columndefinition_desc', 'filter_translations'),
+        '')
+    );
 
     $settings->add(new admin_setting_heading('languagestringreverseapi',
         get_string('languagestringreverse', 'filter_translations'), ''));
