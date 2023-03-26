@@ -32,6 +32,7 @@ $string['cachedef_translatedtext_1'] = 'Translated text (Request level)';
 $string['cachedef_translatedtext_2'] = 'Translated text (Session level)';
 $string['cachedef_translatedtext_4'] = 'Translated text (Application level)';
 $string['cannottranslatelang'] = 'Translation in the selected language is disabled.';
+$string['cannottranslatepage'] = 'This page cannot be translated.';
 $string['clihelptext_copytranslations'] = 'This tool will copy over translations matching the hash of a content and save it under the found hash of the content for each specified table/field. USE WITH EXTREME CARE.
 To execute the task run this command again specifying a mode e.g:
 php cli/copy_translations.php --mode=listcolumns
@@ -93,14 +94,16 @@ You can do a dryrun to check how many records will be affected when this process
 php filter/translations/cli/remove_duplicate_hashes.php --mode=dryrun --file=/Users/moodleadmin/cols.json
 ';
 $string['columndefinition'] = 'Tables/columns to check';
-$string['columndefinition_desc'] = 'Enter the tables/columns to check in JSON format, eg:
+$string['columndefinition_desc'] = 'Scheduled tasks are used to conduct periodic maintenance and syncing of translations.<br>
+    Enter the tables/columns to check in JSON format, eg:
     {
         "label": [
             "intro"
         ]
     }<br>
     You can get the table/columns list by running:<br>
-    php filter/translations/cli/remove_duplicate_hashes.php --mode=listcolumns
+    <pre>php filter/translations/cli/remove_duplicate_hashes.php --mode=listcolumns</pre>
+    Scheduled tasks for this plugin are disabled by default. You can enable them from the <a href="tool/task/scheduledtasks.php">Scheduled tasks</a> page.
 ';
 $string['columndefinitionfileerror'] = 'Missing or invalid column definition file';
 $string['columndefinitionjsonerror'] = 'Invalid column definition json';
@@ -126,6 +129,7 @@ $string['google_backoffonerror'] = 'Back off from erroring API';
 $string['google_enable'] = 'Use Google Translate API';
 $string['googletranslate'] = 'Google Translate';
 $string['hash'] = 'Hash';
+$string['insertspans'] = 'Insert translation spans tags';
 $string['issue'] = 'Status';
 $string['issue_10'] = 'Stale';
 $string['issue_20'] = 'Missing';
@@ -149,9 +153,9 @@ $string['privacy:metadata'] = 'The content translations plugin does not store an
 $string['rawtext'] = 'Original content';
 $string['rawhtml'] = 'Original HTML';
 $string['replaceduplicatehashes'] = 'Replace duplicate hashes';
-$string['sameasrawcontent'] = 'Same text as original content';
-$string['sameasrawcontentmessage'] = 'Translated content is the same as original content';
-$string['scheduledtasks'] = 'Scheduled tasks';
+$string['sameasrawcontent'] = 'Translated text is the same as original content';
+$string['sameasrawcontentmessage'] = 'Please confirm if translated text is supposed to be the same as the original content, by ticking the checkbox above.';
+$string['scheduledtasksheading'] = 'Maintenance scheduled tasks';
 $string['showperfdata'] = 'Show performance data in footer';
 $string['staletranslation'] = 'Translation was created based on different source text. Please update the translation.';
 $string['startinlinetranslation'] = 'Start in-line translation';

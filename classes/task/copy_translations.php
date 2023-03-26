@@ -88,6 +88,10 @@ class copy_translations extends \core\task\scheduled_task {
 
         $languages = get_string_manager()->get_list_of_translations(); // Languages in used in the site.
         $anyexception = null;
+
+        // Get all translations records.
+        $alltranslations = $DB->get_records('filter_translations', null, '', 'id, md5key, lastgeneratedhash, targetlanguage');
+
         $transaction = $DB->start_delegated_transaction();
         foreach ($columnsbytabletoprocess as $table => $columns) {
             $filter = new filter_translations(context_system::instance(), []);
@@ -101,7 +105,11 @@ class copy_translations extends \core\task\scheduled_task {
             mtrace("Started processing table: $table");
 
             foreach ($columns as $column) {
-                if (!isset($columnsbytable[$table]) || !in_array($column, $columnsbytable[$table])) {
+                // Blocks not supported yet.
+                if ($table == 'block_instances') {
+                    mtrace("-- Table $table cannot be processed. Skipping...");
+                    continue;
+                } else if (!isset($columnsbytable[$table]) || !in_array($column, $columnsbytable[$table])) {
                     $ex = new \moodle_exception('unknowncolumn', 'filter_translations');
                     mtrace_exception($ex);
                     $anyexception = $ex;
@@ -115,6 +123,7 @@ class copy_translations extends \core\task\scheduled_task {
                     }
 
                     $formattedcolumn = '';
+                    $context = null;
 
                     // Rendered content may be different.
                     // Get rendered version of content.
@@ -166,33 +175,32 @@ class copy_translations extends \core\task\scheduled_task {
                     // Get all matching translations for this content.
                     $foundhashtranslations = [];
                     $generatedhashtranslations = [];
-                    $translations = $DB->get_records_select(
-                        'filter_translations',
-                        "md5key = '$foundhash' OR lastgeneratedhash = '$generatedhash'",
-                        null,
-                        "md5key");
 
-                    foreach ($translations as $tr) {
-                        if ($tr->md5key == $foundhash) {
-                            $foundhashtranslations[$tr->targetlanguage] = $tr; // Translations recorded for this content.
-                        } else {
-                            $generatedhashtranslations[$tr->targetlanguage] = $tr; // Translations matching this content hash.
-                        }
-                    }
+                    $foundhashtranslations = $this->findtranslations($alltranslations, $foundhash, 'md5key');
+                    $generatedhashtranslations = $this->findtranslations($alltranslations, $generatedhash, 'lastgeneratedhash');
 
                     // Copy over any translations not recorded under the found hash of this content.
                     $shouldprint = true;
                     foreach ($generatedhashtranslations as $tr) {
                         if (!isset($foundhashtranslations[$tr->targetlanguage]) && isset($languages[$tr->targetlanguage])) {
                             if ($shouldprint) {
-                                cli_writeln("foundhash: $foundhash, content hash: $generatedhash");
+                                mtrace("foundhash: $foundhash, content hash: $generatedhash");
+
+                                if (empty($context)) {
+                                    // TODO: Use correct context ???
+                                    $context = context_course::instance($row->course); // Use course context.
+                                }
+
                                 $shouldprint = false;
                             }
 
-                            mtrace("  + copying translation from md5key: $tr->md5key, lang: $tr->targetlanguage");
+                            // Get full translation record.
+                            $record = $DB->get_record('filter_translations', ['id' => $tr->id]);
+                            mtrace("  + copying translation from md5key: $record->md5key, lang: $record->targetlanguage");
 
-                            $record = $tr;
-                            $record->md5key = $foundhash;
+                            $record->id = null; // Unset id.
+                            $record->md5key = $foundhash; // Copy under this hash.
+                            $record->contextid = $context->id; // Contextid of new content.
                             $DB->insert_record('filter_translations', $record);
                         }
                     }
@@ -208,5 +216,27 @@ class copy_translations extends \core\task\scheduled_task {
             // If there was any error, ensure the task fails.
             throw $anyexception;
         }
+    }
+
+    /**
+     * Get a filtered list of translation records.
+     *
+     * @param array $alltranslations
+     * @param string $hash value to look for
+     * @param string $key key to search against
+     * @return array filtered array
+     */
+    private function findtranslations(array $alltranslations, string $hash, string $key) {
+        $matchedrecords = [];
+
+        foreach ($alltranslations as $tr) {
+            if ($tr->$key == $hash) {
+                if (!isset($matchedrecords[$tr->targetlanguage])) {
+                    $matchedrecords[$tr->targetlanguage] = $tr;
+                }
+            }
+        }
+
+        return $matchedrecords;
     }
 }
