@@ -54,4 +54,14 @@ $capabilities = [
         'riskbitmask' => RISK_DATALOSS,
         'contextlevel' => CONTEXT_SYSTEM
     ],
+    'filter/translations:bulkimporttranslations' => [
+        'captype' => 'write',
+        'riskbitmask' => RISK_DATALOSS,
+        'contextlevel' => CONTEXT_SYSTEM
+    ],
+    'filter/translations:exporttranslations' => [
+        'captype' => 'read',
+        'riskbitmask' => RISK_DATALOSS,
+        'contextlevel' => CONTEXT_SYSTEM
+    ],
 ];

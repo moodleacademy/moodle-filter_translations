@@ -53,7 +53,7 @@ function filter_translations_pluginfile($course, $cm, context $context, $fileare
  * @return string The HTML
  */
 function filter_translations_render_navbar_output(\renderer_base $renderer) {
-    global $PAGE, $CFG, $DB;
+    global $PAGE, $CFG;
 
     if (!filter_is_enabled('translations')) {
         return '';
@@ -143,6 +143,8 @@ function filter_translations_render_navbar_output(\renderer_base $renderer) {
     ]);
 
     $alltranslationsurl = new moodle_url("/filter/translations/managetranslations.php");
+    $importtranslationsurl = new moodle_url("/filter/translations/import.php");
+    $exporttranslationsurl = new moodle_url("/filter/translations/export.php", ['id' => $PAGE->course->id]);
 
     return $renderer->render_from_template('filter_translations/toggleinlinestranslationstate', (object)[
         'toogleinlinetranslationurl' => $PAGE->url->out(false, ['inlinetransationtate' => !$currentinlinetranslationstate]),
@@ -152,9 +154,13 @@ function filter_translations_render_navbar_output(\renderer_base $renderer) {
         'staletranslationsurl' => $staletranslationsurl->out(false),
         'allmissingtranslationsurl' => $allmissingtranslationsurl->out(false),
         'allstaletranslationsurl' => $allstaletranslationsurl->out(false),
+        'importtranslationsurl' => $importtranslationsurl->out(false),
+        'exporttranslationsurl' => isset($exporttranslationsurl) ? $exporttranslationsurl->out(false) : '',
         'inlinetranslationstate' => $currentinlinetranslationstate,
         'alltranslationsurl' => $alltranslationsurl->out(false),
         'translateall' => (has_capability('filter/translations:editsitedefaulttranslations', $context)) ? true : false,
+        'bulkimport' => (has_capability('filter/translations:bulkimporttranslations', $context)) ? true : false,
+        'canexport' => (has_capability('filter/translations:exporttranslations', $context)) ? true : false,
         'skiplanguage' => $skiplanguage,
         'skiptranslations' => $skiptranslations,
     ]);
