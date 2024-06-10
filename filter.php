@@ -135,6 +135,8 @@ class filter_translations extends moodle_text_filter {
             return $text;
         }
 
+        $context = $this->context; // Use the context value that the filter has.
+
         // Look for a hash in a span tag and remove the span tags.
         $foundhash = $this->findandremovehash($text);
         // Generate a hash based on the text to be translated.
@@ -160,7 +162,7 @@ class filter_translations extends moodle_text_filter {
         } else {
             // Get the best translation (object) to use.
             $translator = new translator();
-            $translation = $translator->get_best_translation($targetlanguage, $generatedhash, $foundhash, $text);
+            $translation = $translator->get_best_translation($targetlanguage, $generatedhash, $foundhash, $text, $context);
 
             if (empty($translation)) {
                 // No translation so we'll just return the text unaltered.
@@ -221,17 +223,42 @@ class filter_translations extends moodle_text_filter {
             return null;
         }
 
+        // In TinyMCE translation span tags need to be inside <p> tags.
+        // So we handle both formats for now. Eventually everything will move to the new format.
+        // TODO: Update the old format into the new format, during upgrade???
+        // New format: <p class="translationhash"><span data-translationhash="abcxxx">/span></p>
+        // Old format: <span data-translationhash="abcxxx">/span>
+        $translationhashregex = '/(?:<p>|<p class="translationhash">)\s*'
+            . '<span\s*data-translationhash\s*=\s*[\'"]+([a-zA-Z0-9]+)[\'"]+\s*><\/span>\s*<\/p>|'
+            . '<span\s*data-translationhash\s*=\s*[\'"]+([a-zA-Z0-9]+)[\'"]+\s*><\/span>/';
+
         // Get the actual hash.
         $translationhashes = [];
-        preg_match('/<span data-translationhash[ ]*=[ ]*[\'"]+([a-zA-Z0-9]+)[\'"]+[ ]*>[ ]*<\/span>/', $text, $translationhashes);
-        if (empty($translationhashes[1])) {
+        // preg_match('/<span data-translationhash[ ]*=[ ]*[\'"]+([a-zA-Z0-9]+)[\'"]+[ ]*>[ ]*<\/span>/', $text, $translationhashes);
+        preg_match($translationhashregex, $text, $translationhashes);
+
+        // We are matching for either the new or old syntax.
+        // So match can be at index 1 or 2.
+        if (empty($translationhashes[1]) && empty($translationhashes[2])) {
             return null;
         }
 
         // Remove the span tag from the text.
-        $text = preg_replace('/<span data-translationhash[ ]*=[ ]*[\'"]+([a-zA-Z0-9]+)[\'"]+[ ]*>[ ]*<\/span>/', '', $text);
+        // $text = preg_replace('/<span data-translationhash[ ]*=[ ]*[\'"]+([a-zA-Z0-9]+)[\'"]+[ ]*>[ ]*<\/span>/', '', $text);
+        $text = preg_replace($translationhashregex, '', $text);
 
-        return $translationhashes[1];
+        // New syntax.
+        if (!empty($translationhashes[1])) {
+            return $translationhashes[1];
+        }
+
+        // Old syntax.
+        if (!empty($translationhashes[2])) {
+            return $translationhashes[2];
+        }
+
+        // We should never reach here, but just in case.
+        return null;
     }
 
     /**
@@ -282,10 +309,8 @@ class filter_translations extends moodle_text_filter {
         // Get the context of the translation, page if possible, or fall back to system.
         if (!empty($translation) && !empty($translation->get('contextid'))) {
             $contextid = $translation->get('contextid');
-        } else if ($PAGE->state == $PAGE::STATE_BEFORE_HEADER) {
-            $contextid = context_system::instance()->id;
         } else {
-            $contextid = $PAGE->context->id;
+            $contextid = $this->context->id;
         }
 
         // Build an object containing all the data that the AMD module will need to render the button.

@@ -23,7 +23,6 @@
  * @copyright 2021, Andrew Hancox
  */
 
-use core\notification;
 use filter_translations\edittranslationform;
 use filter_translations\translation;
 use filter_translations\unifieddiff;
@@ -145,7 +144,7 @@ if ($data = $form->get_data()) {
 
     // Before saving, ensure we are not overwriting existing translation.
     $record = $DB->get_record('filter_translations',
-            array('targetlanguage' => $targetlanguage, 'md5key' => $persistent->get('md5key'))
+            ['targetlanguage' => $targetlanguage, 'md5key' => $persistent->get('md5key')]
         );
 
     if (!$record) {
