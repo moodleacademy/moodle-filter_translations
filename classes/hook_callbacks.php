@@ -35,9 +35,8 @@ class hook_callbacks {
      *
      * @param before_footer_html_generation $hook
      */
-    public static function before_footer_html_generation(before_footer_html_generation $hook): void {
+    public static function before_footer(before_footer_html_generation $hook): void {
         global $CFG, $PAGE, $OUTPUT;
-
         require_once("$CFG->dirroot/filter/translations/filter.php");
 
         if (get_config('filter_translations', 'showperfdata')) {
