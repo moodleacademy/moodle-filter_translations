@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 $callbacks = [
     [
         'hook' => \core\hook\output\before_footer_html_generation::class,
-        'callback' => [\filter_translations\hook_callbacks::class, 'before_footer_html_generation'],
+        'callback' => [\filter_translations\hook_callbacks::class, 'before_footer'],
         'priority' => 0,
     ],
     [

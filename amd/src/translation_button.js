@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package filter_translations
+ * @package
  * @author Andrew Hancox <andrewdchancox@googlemail.com>
  * @author Open Source Learning <enquiries@opensourcelearning.co.uk>
  * @link https://opensourcelearning.co.uk
@@ -22,7 +22,8 @@
  * @copyright 2021, Andrew Hancox
  */
 
-define(['jquery', 'core/modal_factory', 'core/str', 'core/templates'], function ($, ModalFactory, Str, templates) {
+define(['jquery', 'core/modal', 'core/str', 'core/templates', 'core/notification'],
+    function ($, Modal, Str, templates, Notification) {
     var translation_button = {
         'returnurl': '',
         'init': function (returnurl) {
@@ -116,12 +117,11 @@ define(['jquery', 'core/modal_factory', 'core/str', 'core/templates'], function 
                 component: 'filter_translations'
             }]).then(function (langStrings) {
                 return templates.render('filter_translations/translationdetailsmodalbody', context).done(function (html) {
-                    ModalFactory.create({
+                    Modal.create({
                         title: langStrings[0],
                         body: html,
-                        type: ModalFactory.types.ALERT
-                    }).then(function (modal) {
-                        modal.show();
+                        show: true, // Assuming this is the equivalent for showing the modal immediately
+                        removeOnClose: true // Recommended for modern modals
                     });
                 });
             }).fail(Notification.exception);
@@ -135,6 +135,11 @@ define(['jquery', 'core/modal_factory', 'core/str', 'core/templates'], function 
             walk(ancestor);
             return elements;
 
+            /**
+             * Recursively walks the DOM to find elements that directly contain text.
+             *
+             * @param {Node} element The current DOM node to walk.
+             */
             function walk(element) {
                 var n = element.childNodes.length;
                 for (var i = 0; i < n; i++) {
